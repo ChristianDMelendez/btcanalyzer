@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC Chart Analyzer Chatbot</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="chat-container">
+    <h1>🧠 BTC Chart Analyzer</h1>
+    <div id="chat-output"></div>
+
+    <input type="file" id="chart-upload" accept="image/*" />
+    <button onclick="analyzeChart()">Analyze Chart</button>
+
+    <input type="text" id="user-input" placeholder="Ask about BTC trends..." />
+    <button onclick="sendMessage()">Send</button>
+
+    <div id="live-price">Live BTC Price: <span id="btc-price">Loading...</span></div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
