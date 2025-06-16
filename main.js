@@ -1,6 +1,6 @@
 const BACKEND_URL = "https://btcanalyzer.onrender.com";
 
-// ✅ Load Teachable Machine model using the correct loader
+// ✅ Load Teachable Machine model using correct loader
 let model;
 async function loadModel() {
   try {
@@ -12,6 +12,7 @@ async function loadModel() {
 }
 loadModel();
 
+// 🧠 Analyze uploaded chart image
 async function analyzeChart() {
   const fileInput = document.getElementById("chart-upload");
   const file = fileInput.files[0];
@@ -39,7 +40,7 @@ async function analyzeChart() {
         const input = tf.browser.fromPixels(imageData).toFloat().div(tf.scalar(255)).expandDims(0);
         const prediction = await model.predict(input).data();
 
-        const labels = ["Pattern A", "Pattern B", "Pattern C"]; // 🔄 Replace with your real labels
+        const labels = ["Head & Shoulders", "Double Top", "Rising Wedge"]; // Change these if you train your own
         const highest = prediction.indexOf(Math.max(...prediction));
 
         chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[highest]}<br>📊 Confidence: ${(prediction[highest] * 100).toFixed(2)}%</div>`;
@@ -54,17 +55,20 @@ async function analyzeChart() {
   chat.innerHTML += `<div class="bot">Analyzing chart with TensorFlow.js... 🧠</div>`;
 }
 
+// 💰 Fetch BTC price only when asked
 async function fetchBTCPrice() {
   try {
     const response = await fetch(`${BACKEND_URL}/price`);
     const data = await response.json();
     const price = parseFloat(data.price).toFixed(2);
-    document.getElementById("btc-price").innerText = `$${price}`;
+    const chat = document.getElementById("chat-output");
+    chat.innerHTML += `<div class="bot">💸 The current BTC price is $${price}</div>`;
   } catch (err) {
     console.error("❌ Error fetching BTC price:", err);
   }
 }
 
+// 💬 Handle user messages
 function sendMessage() {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
@@ -75,13 +79,12 @@ function sendMessage() {
   input.value = "";
 
   setTimeout(() => {
-    if (msg.toLowerCase().includes("price")) {
-      fetchBTCPrice();
+    const lowerMsg = msg.toLowerCase();
+    if (lowerMsg.includes("price") || lowerMsg.includes("btc")) {
       chat.innerHTML += `<div class="bot">📡 Fetching latest BTC price...</div>`;
+      fetchBTCPrice();
     } else {
       chat.innerHTML += `<div class="bot">🤖 Got it. Upload a chart to detect patterns!</div>`;
     }
   }, 1000);
 }
-
-fetchBTCPrice();
