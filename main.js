@@ -1,10 +1,10 @@
 const BACKEND_URL = "https://btcanalyzer.onrender.com";
 
-// Load TensorFlow.js model (working demo model)
+// ✅ Load Teachable Machine model using the correct loader
 let model;
 async function loadModel() {
   try {
-    model = await tf.loadGraphModel("https://teachablemachine.withgoogle.com/models/jD_JuC-x7/model.json");
+    model = await tf.loadLayersModel("https://teachablemachine.withgoogle.com/models/jD_JuC-x7/model.json");
     console.log("✅ Model loaded.");
   } catch (err) {
     console.error("❌ Failed to load model:", err);
@@ -12,7 +12,6 @@ async function loadModel() {
 }
 loadModel();
 
-// Analyze chart using TensorFlow.js model
 async function analyzeChart() {
   const fileInput = document.getElementById("chart-upload");
   const file = fileInput.files[0];
@@ -30,22 +29,22 @@ async function analyzeChart() {
 
     img.onload = async () => {
       try {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = 224;
         canvas.height = 224;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, 224, 224);
 
         const imageData = ctx.getImageData(0, 0, 224, 224);
-        const input = tf.browser.fromPixels(imageData).toFloat().expandDims(0);
+        const input = tf.browser.fromPixels(imageData).toFloat().div(tf.scalar(255)).expandDims(0);
         const prediction = await model.predict(input).data();
 
-        const labels = ["Head & Shoulders", "Double Top", "Rising Wedge"];
-        const maxIndex = prediction.indexOf(Math.max(...prediction));
+        const labels = ["Pattern A", "Pattern B", "Pattern C"]; // 🔄 Replace with your real labels
+        const highest = prediction.indexOf(Math.max(...prediction));
 
-        chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[maxIndex]}<br>📊 Confidence: ${(prediction[maxIndex] * 100).toFixed(2)}%</div>`;
+        chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[highest]}<br>📊 Confidence: ${(prediction[highest] * 100).toFixed(2)}%</div>`;
       } catch (err) {
-        console.error("❌ Chart prediction error:", err);
+        console.error("❌ Prediction error:", err);
         chat.innerHTML += `<div class="bot">❌ Error analyzing chart. Try another image.</div>`;
       }
     };
