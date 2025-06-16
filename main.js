@@ -3,8 +3,12 @@ const BACKEND_URL = "https://btcanalyzer.onrender.com";
 // Load TensorFlow.js model (working demo model)
 let model;
 async function loadModel() {
-  model = await tf.loadLayersModel("https://teachablemachine.withgoogle.com/models/jD_JuC-x7/model.json");
-  console.log("Model loaded.");
+  try {
+    model = await tf.loadGraphModel("https://teachablemachine.withgoogle.com/models/jD_JuC-x7/model.json");
+    console.log("✅ Model loaded.");
+  } catch (err) {
+    console.error("❌ Failed to load model:", err);
+  }
 }
 loadModel();
 
@@ -25,15 +29,25 @@ async function analyzeChart() {
     img.src = reader.result;
 
     img.onload = async () => {
-      const tensor = tf.browser.fromPixels(img)
-        .resizeNearestNeighbor([224, 224])
-        .toFloat()
-        .expandDims();
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 224;
+        canvas.height = 224;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 224, 224);
 
-      const prediction = await model.predict(tensor).data();
-      const labels = ["Pattern A", "Pattern B", "Pattern C"]; // Replace with real labels if needed
-      const highest = prediction.indexOf(Math.max(...prediction));
-      chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[highest]}<br>📊 Confidence: ${(prediction[highest] * 100).toFixed(2)}%</div>`;
+        const imageData = ctx.getImageData(0, 0, 224, 224);
+        const input = tf.browser.fromPixels(imageData).toFloat().expandDims(0);
+        const prediction = await model.predict(input).data();
+
+        const labels = ["Head & Shoulders", "Double Top", "Rising Wedge"];
+        const maxIndex = prediction.indexOf(Math.max(...prediction));
+
+        chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[maxIndex]}<br>📊 Confidence: ${(prediction[maxIndex] * 100).toFixed(2)}%</div>`;
+      } catch (err) {
+        console.error("❌ Chart prediction error:", err);
+        chat.innerHTML += `<div class="bot">❌ Error analyzing chart. Try another image.</div>`;
+      }
     };
   };
   reader.readAsDataURL(file);
@@ -42,10 +56,14 @@ async function analyzeChart() {
 }
 
 async function fetchBTCPrice() {
-  const response = await fetch(`${BACKEND_URL}/price`);
-  const data = await response.json();
-  const price = parseFloat(data.price).toFixed(2);
-  document.getElementById("btc-price").innerText = `$${price}`;
+  try {
+    const response = await fetch(`${BACKEND_URL}/price`);
+    const data = await response.json();
+    const price = parseFloat(data.price).toFixed(2);
+    document.getElementById("btc-price").innerText = `$${price}`;
+  } catch (err) {
+    console.error("❌ Error fetching BTC price:", err);
+  }
 }
 
 function sendMessage() {
@@ -62,7 +80,7 @@ function sendMessage() {
       fetchBTCPrice();
       chat.innerHTML += `<div class="bot">📡 Fetching latest BTC price...</div>`;
     } else {
-      chat.innerHTML += `<div class="bot">🤖 Noted. You can also upload a chart for pattern detection!</div>`;
+      chat.innerHTML += `<div class="bot">🤖 Got it. Upload a chart to detect patterns!</div>`;
     }
   }, 1000);
 }
