@@ -1,9 +1,9 @@
 const BACKEND_URL = "https://btcanalyzer.onrender.com";
 
-// Load TensorFlow.js model (placeholder logic for pattern detection)
+// Load TensorFlow.js model (working demo model)
 let model;
 async function loadModel() {
-  model = await tf.loadLayersModel('https://teachablemachine.withgoogle.com/models/8O9hCXn5n/model.json');
+  model = await tf.loadLayersModel("https://teachablemachine.withgoogle.com/models/jD_JuC-x7/model.json");
   console.log("Model loaded.");
 }
 loadModel();
@@ -19,20 +19,28 @@ async function analyzeChart() {
     return;
   }
 
-  const img = new Image();
-  img.src = URL.createObjectURL(file);
-  img.onload = async () => {
-    const tensor = tf.browser.fromPixels(img).resizeNearestNeighbor([224, 224]).toFloat().expandDims();
-    const prediction = await model.predict(tensor).data();
-    const labels = ["Head & Shoulders", "Double Top", "Rising Wedge", "Symmetrical Triangle"];
-    const highest = prediction.indexOf(Math.max(...prediction));
-    chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[highest]}<br>📊 Confidence: ${(prediction[highest] * 100).toFixed(2)}%</div>`;
+  const reader = new FileReader();
+  reader.onload = function () {
+    const img = new Image();
+    img.src = reader.result;
+
+    img.onload = async () => {
+      const tensor = tf.browser.fromPixels(img)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .expandDims();
+
+      const prediction = await model.predict(tensor).data();
+      const labels = ["Pattern A", "Pattern B", "Pattern C"]; // Replace with real labels if needed
+      const highest = prediction.indexOf(Math.max(...prediction));
+      chat.innerHTML += `<div class="bot">🧠 Detected Pattern: ${labels[highest]}<br>📊 Confidence: ${(prediction[highest] * 100).toFixed(2)}%</div>`;
+    };
   };
+  reader.readAsDataURL(file);
 
   chat.innerHTML += `<div class="bot">Analyzing chart with TensorFlow.js... 🧠</div>`;
 }
 
-// Fetch BTC price from backend
 async function fetchBTCPrice() {
   const response = await fetch(`${BACKEND_URL}/price`);
   const data = await response.json();
@@ -40,7 +48,6 @@ async function fetchBTCPrice() {
   document.getElementById("btc-price").innerText = `$${price}`;
 }
 
-// Chat logic
 function sendMessage() {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
